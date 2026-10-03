@@ -74,6 +74,9 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        if (!flutterEngine.plugins.has(FloatingLyricsPlugin::class.java)) {
+            flutterEngine.plugins.add(FloatingLyricsPlugin())
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SAF_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {

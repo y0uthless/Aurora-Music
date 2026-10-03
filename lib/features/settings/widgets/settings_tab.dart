@@ -6,6 +6,7 @@ import '../../../shared/providers/performance_mode_provider.dart';
 import '../../../shared/services/version_service.dart';
 import '../../../shared/services/notification_manager.dart';
 import '../screens/appearance_settings_screen.dart';
+import '../screens/floating_lyrics_settings_screen.dart';
 import '../screens/folder_filter_settings_screen.dart';
 import '../screens/playback_settings_screen.dart';
 import '../screens/storage_settings_screen.dart';
@@ -82,6 +83,17 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
           ),
         ),
+        if (Theme.of(context).platform == TargetPlatform.android)
+          _buildCategoryCard(
+            icon: Icons.subtitles_outlined,
+            title: Localizations.localeOf(context).languageCode == 'zh'
+                ? '悬浮歌词' : 'Floating lyrics',
+            subtitle: Localizations.localeOf(context).languageCode == 'zh'
+                ? '在其他应用上方显示歌词，调整透明度' : 'Lyrics over other apps, with adjustable opacity',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const FloatingLyricsSettingsScreen(),
+            )),
+          ),
         _buildCategoryCard(
           icon: Icons.insights_outlined,
           title: l10n.settingsInsights,
