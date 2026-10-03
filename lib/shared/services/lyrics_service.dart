@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/timed_lyrics.dart';
+import '../utils/lyric_timing.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:math' show min, max;
 import 'package:flutter/foundation.dart';
@@ -527,69 +528,10 @@ class TimedLyricsService {
   }
 
   List<TimedLyric> _parseLrc(String lrcContent) {
-    _log('  Parsing LRC content...');
-    final List<TimedLyric> timedLyrics = [];
-
-    // Properly decode and normalize the content
-    final normalizedContent = utf8
+    final normalized = utf8
         .decode(utf8.encode(lrcContent), allowMalformed: true)
         .replaceAll(RegExp(r'[\uFFFD]'), '');
-
-    final lines = normalizedContent.split('\n');
-    _log('  Processing ${lines.length} lines from LRC file');
-
-    // Basic LRC format regex
-    final timeRegex = RegExp(r'\[(\d{2}):(\d{2})[\.:]\d{2,3}\]');
-
-    for (var i = 0; i < lines.length; i++) {
-      try {
-        final line = lines[i];
-
-        // Skip empty lines and metadata
-        if (line.trim().isEmpty ||
-            line.startsWith('[ti:') ||
-            line.startsWith('[ar:') ||
-            line.startsWith('[al:')) {
-          continue;
-        }
-
-        final timeMatches = timeRegex.allMatches(line);
-        if (timeMatches.isEmpty) {
-          continue;
-        }
-
-        // Get the text content after the last time tag
-        var text = line.substring(line.lastIndexOf(']') + 1).trim();
-
-        // Additional UTF-8 normalization for the text content
-        text = utf8
-            .decode(utf8.encode(text), allowMalformed: true)
-            .replaceAll(RegExp(r'[\uFFFD]'), '');
-
-        if (text.isEmpty) {
-          continue;
-        }
-
-        // Process each time tag in the line
-        for (final match in timeMatches) {
-          final minutes = int.parse(match.group(1)!);
-          final seconds = int.parse(match.group(2)!);
-
-          final time = Duration(
-            minutes: minutes,
-            seconds: seconds,
-          );
-
-          timedLyrics.add(TimedLyric(time: time, text: text));
-        }
-      } catch (e) {
-        continue;
-      }
-    }
-
-    timedLyrics.sort((a, b) => a.time.compareTo(b.time));
-
-    return timedLyrics;
+    return parseTimedLyrics(normalized);
   }
 
   Future<void> _saveLyricsToFile(

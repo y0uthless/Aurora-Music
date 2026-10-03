@@ -11,6 +11,7 @@ import 'dart:ui' as ui;
 import 'core/constants/app_config.dart';
 import 'shared/services/audio_player_service.dart';
 import 'shared/services/audio_handler.dart';
+import 'shared/services/floating_lyrics_service.dart';
 import 'shared/services/error_tracking_service.dart';
 import 'shared/services/shader_warmup_service.dart';
 import 'shared/services/background_manager_service.dart';
@@ -146,6 +147,10 @@ void main() async {
         providers: [
           // Use lazy initialization for better startup performance
           ChangeNotifierProvider(create: (_) => AudioPlayerService()),
+          ChangeNotifierProvider(
+            create: (context) => FloatingLyricsService(context.read<AudioPlayerService>()),
+            lazy: false,
+          ),
           ChangeNotifierProvider(create: (_) => ThemeProvider(), lazy: false),
           ChangeNotifierProvider(create: (_) => EqualizerService(), lazy: false),
           ChangeNotifierProvider(
