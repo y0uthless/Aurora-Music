@@ -6,10 +6,13 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
@@ -33,6 +36,15 @@ class FloatingLyricsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var lockButton: Button? = null
     private var params: WindowManager.LayoutParams? = null
     private var locked = false
+    private var controls: LinearLayout? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private val hideControls = Runnable { controls?.visibility = View.GONE }
+
+    private fun revealControls() {
+        controls?.visibility = View.VISIBLE
+        handler.removeCallbacks(hideControls)
+        handler.postDelayed(hideControls, 5000L)
+    }
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -84,7 +96,11 @@ class FloatingLyricsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(6), dp(12), dp(8))
         }
-        val controls = LinearLayout(context).apply { gravity = Gravity.END }
+        val controls = LinearLayout(context).apply {
+            gravity = Gravity.END
+            visibility = View.GONE
+        }
+        this.controls = controls
         val handle = TextView(context).apply {
             text = "⋮⋮"
             contentDescription = "Drag floating lyrics"
@@ -101,6 +117,7 @@ class FloatingLyricsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             setOnClickListener {
                 locked = !locked
                 updateLock()
+                revealControls()
                 channel.invokeMethod("lockChanged", locked)
             }
         }
@@ -141,28 +158,43 @@ class FloatingLyricsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             x = prefs().getInt("x", dp(12))
             y = prefs().getInt("y", dp(120))
         }
+        root.setOnClickListener { revealControls() }
+        var moved = false
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
         var startX = 0
         var startY = 0
         var touchX = 0f
         var touchY = 0f
         val drag = View.OnTouchListener { _, event ->
-            if (locked) return@OnTouchListener false
             val p = params ?: return@OnTouchListener false
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    moved = false
+                    handler.removeCallbacks(hideControls)
                     startX = p.x; startY = p.y
                     touchX = event.rawX; touchY = event.rawY
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    p.x = startX + (event.rawX - touchX).roundToInt()
-                    p.y = startY + (event.rawY - touchY).roundToInt()
-                    clampPosition(root, p)
-                    manager.updateViewLayout(root, p)
+                    val dx = event.rawX - touchX
+                    val dy = event.rawY - touchY
+                    if (dx * dx + dy * dy > touchSlop * touchSlop) moved = true
+                    if (!locked && moved) {
+                        p.x = startX + dx.roundToInt()
+                        p.y = startY + dy.roundToInt()
+                        clampPosition(root, p)
+                        manager.updateViewLayout(root, p)
+                    }
                     true
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                MotionEvent.ACTION_UP -> {
+                    if (!moved) root.performClick()
+                    else if (controls.visibility == View.VISIBLE) revealControls()
                     prefs().edit().putInt("x", p.x).putInt("y", p.y).apply()
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    if (controls.visibility == View.VISIBLE) revealControls()
                     true
                 }
                 else -> false
@@ -222,6 +254,8 @@ class FloatingLyricsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private fun hide() {
+        handler.removeCallbacks(hideControls)
+        controls = null
         panel?.let { root ->
             try { manager.removeView(root) } catch (_: IllegalArgumentException) { }
         }

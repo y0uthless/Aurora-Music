@@ -103,6 +103,42 @@ class _FloatingLyricsSettingsScreenState
     );
   }
 
+  Widget _switchSetting({
+    required Widget title,
+    Widget? subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    // Let translated labels and large accessibility text determine row height.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DefaultTextStyle(
+                  style: Theme.of(context).textTheme.titleMedium!,
+                  child: title,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium!,
+                    child: subtitle,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = context.watch<FloatingLyricsService>();
@@ -112,7 +148,7 @@ class _FloatingLyricsSettingsScreenState
           ? Center(child: Text(_label('Available on Android.', '仅支持 Android。')))
           : ListView(
               children: [
-                SwitchListTile(
+                _switchSetting(
                   title: Text(_label('Floating lyrics', '悬浮歌词')),
                   subtitle: Text(
                     _label(
@@ -151,7 +187,7 @@ class _FloatingLyricsSettingsScreenState
                         color: Color(service.textColor)
                             .withValues(alpha: service.textOpacity),
                         shadows: const [
-                          Shadow(color: Colors.black, blurRadius: 3),
+                          Shadow(blurRadius: 3),
                         ],
                       ),
                     ),
@@ -223,17 +259,17 @@ class _FloatingLyricsSettingsScreenState
                       ),
                   ],
                 ),
-                SwitchListTile(
+                _switchSetting(
                   title: Text(_label('Show next line', '显示下一行')),
                   value: service.twoLines,
                   onChanged: (v) => unawaited(service.updateStyle(twoLines: v)),
                 ),
-                SwitchListTile(
+                _switchSetting(
                   title: Text(_label('Lock position', '锁定位置')),
                   subtitle: Text(
                     _label(
-                      'The Unlock and Close buttons remain available.',
-                      '仍可使用解锁和关闭按钮。',
+                      'Tap the lyrics to show Lock/Unlock and Close for 5 seconds.',
+                      '点击歌词可显示锁定/解锁和关闭按钮，5 秒后自动隐藏。',
                     ),
                   ),
                   value: service.locked,

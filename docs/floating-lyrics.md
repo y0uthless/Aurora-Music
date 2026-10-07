@@ -7,10 +7,12 @@ window; the Now Playing screen does not need to be open.
 
 ## Controls
 
-- Drag the handle or lyric text to reposition the window.
+- Controls start hidden. Tap the lyrics, even while locked, to show the handle,
+  Lock/Unlock and Close for 5 seconds. Tap again to restart the timer.
+- Drag the handle or lyric text to reposition the unlocked window.
 - Lock/Unlock fixes or releases the position; Close disables floating lyrics.
 - Text opacity and background opacity are independent, from 0–100%.
-  Window controls remain visible even when both are at 0%.
+  Revealed controls remain opaque even when both are at 0%.
 - Choose a text colour, font size (12–36), and whether to show the next line.
 - Style and enabled state are saved in Flutter preferences. Window position
   is saved in Android preferences and clamped back onto the screen.
@@ -47,6 +49,8 @@ preview can still be visible).
   seek forward/back; change playback speed; skip tracks; use crossfade; rotate;
   lock/unlock/close; restart Aurora and check saved styles and position; play
   cached lyrics offline; stop playback and verify the window disappears.
+- Test large system text on the settings page, plus tap/reveal/auto-hide,
+  dragging, locked taps, closing and reopening the overlay on a device.
 - Background lyric and overlay behavior still needs actual Android testing.
   OEM battery policies and apps that hide overlays may affect visibility.
 
